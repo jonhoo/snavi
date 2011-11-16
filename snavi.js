@@ -198,6 +198,46 @@ var snavi = {
    * @param {Boolean} [toHistory=true] Should this navigation be recorded to history?
    */
   navigate: function ( url, layout, toHistory ) {
-    
+    this.data ( url, layout, _.bind ( function ( url, layout, data ) {
+      if ( layout === this._currentLayout ) {
+        // Already on the right layout, attempt to call modifier
+        if ( this.modify ( data, layout ) ) {
+          this._finalize ( url, layout );
+          return;
+        }
+      }
+
+      // We need to set up the page from scratch
+      if ( layout in this.templates ) {
+        // Template from cache, just call setup
+        this.setup ( layout, this.templates[layout], data );
+        this._finalize ( url, layout );
+      } else {
+        // Fetch template, store to cache unless forbidden and setup
+        this.templater ( layout, url, _.bind ( function ( url, layout, template, storeTemplate ) {
+          if ( storeTemplate !== false ) {
+            this.templates[layout] = template;
+          }
+
+          this.setup ( layout, template, data );
+          this._finalize ( url, layout );
+        }, this, url, layout ) );
+      }
+    }, this, url, layout ) );
+  };
+
+  /**
+   * Finalizes a navigation step
+   * Records to history and sets _current* properties
+   *
+   * @private
+   * @function
+   * @param {String} url The URL navigated to
+   * @param {String} layout The layout of the current page
+   */
+  _finalize: function ( url, layout ) {
+    this._recordToHistory ( url, layout );
+    this._currentPage = url;
+    this._currentLayout = layout;
   }
 };
