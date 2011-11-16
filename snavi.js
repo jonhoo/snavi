@@ -83,7 +83,7 @@ var snavi = {
    * @param {String} layout Layout associated with current page
    */
   _recordToHistory: function ( url, layout ) {
-    window.pushState ( { url: url, layout: layout }, document.title, url );
+    history.pushState ( { url: url, layout: layout }, document.title, url );
   },
 
   /**
@@ -236,3 +236,5 @@ var snavi = {
     this._currentLayout = layout;
   }
 };
+
+window.addEventListener ( 'popstate', _.bind ( snavi._popstateHandler, snavi ) );
