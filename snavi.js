@@ -35,6 +35,7 @@ var snavi = {
 
   /**
    * Popstate handler
+   *
    * @private 
    * @function
    * @param {PopStateEvent} event The popstate event object
@@ -49,6 +50,18 @@ var snavi = {
     }
 
     this.navigate ( event.state.url, event.state.layout, false );
+  },
+
+  /**
+   * Record to navigation history
+   * 
+   * @private
+   * @function
+   * @param {String} url URL that has been navigated to
+   * @param {String} layout Layout associated with current page
+   */
+  _recordToHistory: function ( url, layout ) {
+    window.pushState ( { url: url, layout: layout }, document.title, url );
   },
 
   /**
