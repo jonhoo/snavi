@@ -40,7 +40,15 @@ var snavi = {
    * @param {PopStateEvent} event The popstate event object
    */
   _popstateHandler: function ( event ) {
+    if ( event.state === null ) {
+      /**
+       * TODO: Handle this *A LOT* better
+       */
+      window.location.reload(true);
+      return;
+    }
 
+    this.navigate ( event.state.url, event.state.layout, false );
   },
 
   /**
@@ -147,8 +155,9 @@ var snavi = {
    *
    * @param {String} url The url to navigate to
    * @param {String} layout The layout of the target page
+   * @param {Boolean} [toHistory=true] Should this navigation be recorded to history?
    */
-  navigate: function ( url, layout ) {
+  navigate: function ( url, layout, toHistory ) {
     
   }
 };
