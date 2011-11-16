@@ -26,14 +26,14 @@ var _ctor = function(){};
 _.bind = "bind" in _ ? _.bind : 
   function (func, context) {
     var bound, args;
-    if (func.bind === Function.prototype.bind && Function.prototype.bind) { return Function.prototype.bind.apply(func, slice.call(arguments, 1)); }
+    if (func.bind === Function.prototype.bind && Function.prototype.bind) { return Function.prototype.bind.apply(func, Array.prototype.slice.call(arguments, 1)); }
     if (typeof func !== "function") { throw new TypeError(); }
-    args = slice.call(arguments, 2);
+    args = Array.prototype.slice.call(arguments, 2);
     bound = function() {
-      if (!(this instanceof bound)) { return func.apply(context, args.concat(slice.call(arguments))); }
+      if (!(this instanceof bound)) { return func.apply(context, args.concat(Array.prototype.slice.call(arguments))); }
       _ctor.prototype = func.prototype;
       var self = new _ctor();
-      var result = func.apply(self, args.concat(slice.call(arguments)));
+      var result = func.apply(self, args.concat(Array.prototype.slice.call(arguments)));
       if (Object(result) === result) { return result; }
       return self;
     };
