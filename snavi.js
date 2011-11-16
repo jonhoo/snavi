@@ -16,32 +16,28 @@ function NavigationError ( message, layout, url ) {
  */
 NavigationError.prototype.toString = function() {
   return "Navigation error in layout " + this.layout + ": " + this.message + " for target " + this.url;
-}
+};
 
 /**
- * To avoid dependency on _.js, we include bind (and dependencies) here
+ * To avoid dependency on _.js, we include bind here
  */
 _ = "_" in window ? _ : {};
-_.isFunction = "isFunction" in _ ? _.isFunction : 
-  function(obj) {
-    return toString.call(obj) == '[object Function]';
-  }
-;
 var _ctor = function(){};
 _.bind = "bind" in _ ? _.bind : 
   function (func, context) {
     var bound, args;
-    if (func.bind === Function.prototype.bind && Function.prototype.bind) return Function.prototype.bind.apply(func, slice.call(arguments, 1));
-    if (!_.isFunction(func)) throw new TypeError;
+    if (func.bind === Function.prototype.bind && Function.prototype.bind) { return Function.prototype.bind.apply(func, slice.call(arguments, 1)); }
+    if (typeof func !== "function") { throw new TypeError(); }
     args = slice.call(arguments, 2);
-    return bound = function() {
-      if (!(this instanceof bound)) return func.apply(context, args.concat(slice.call(arguments)));
+    bound = function() {
+      if (!(this instanceof bound)) { return func.apply(context, args.concat(slice.call(arguments))); }
       _ctor.prototype = func.prototype;
-      var self = new _ctor;
+      var self = new _ctor();
       var result = func.apply(self, args.concat(slice.call(arguments)));
-      if (Object(result) === result) return result;
+      if (Object(result) === result) { return result; }
       return self;
     };
+    return bound;
   }
 ;
 
@@ -224,7 +220,7 @@ var snavi = {
         }, this, url, layout ) );
       }
     }, this, url, layout ) );
-  };
+  },
 
   /**
    * Finalizes a navigation step
