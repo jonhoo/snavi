@@ -68,7 +68,6 @@ var snavi = {
       /**
        * TODO: Handle this *A LOT* better
        */
-      window.location.reload(true);
       return;
     }
 
