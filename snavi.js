@@ -193,11 +193,11 @@ var snavi = {
    * @param {Boolean} [toHistory=true] Should this navigation be recorded to history?
    */
   navigate: function ( url, layout, toHistory ) {
-    this.data ( url, layout, _.bind ( function ( url, layout, data ) {
+    this.data ( url, layout, _.bind ( function ( url, layout, toHistory, data ) {
       if ( layout === this._currentLayout ) {
         // Already on the right layout, attempt to call modifier
         if ( this.modify ( data, layout ) ) {
-          this._finalize ( url, layout );
+          this._finalize ( url, layout, toHistory );
           return;
         }
       }
@@ -206,19 +206,19 @@ var snavi = {
       if ( layout in this.templates ) {
         // Template from cache, just call setup
         this.setup ( layout, this.templates[layout], data );
-        this._finalize ( url, layout );
+        this._finalize ( url, layout, toHistory );
       } else {
         // Fetch template, store to cache unless forbidden and setup
-        this.templater ( layout, url, _.bind ( function ( url, layout, template, storeTemplate ) {
+        this.templater ( layout, url, _.bind ( function ( url, layout, toHistory, template, storeTemplate ) {
           if ( storeTemplate !== false ) {
             this.templates[layout] = template;
           }
 
           this.setup ( layout, template, data );
-          this._finalize ( url, layout );
-        }, this, url, layout ) );
+          this._finalize ( url, layout, toHistory );
+        }, this, url, layout, toHistory ) );
       }
-    }, this, url, layout ) );
+    }, this, url, layout, toHistory ) );
   },
 
   /**
@@ -230,8 +230,10 @@ var snavi = {
    * @param {String} url The URL navigated to
    * @param {String} layout The layout of the current page
    */
-  _finalize: function ( url, layout ) {
-    this._recordToHistory ( url, layout );
+  _finalize: function ( url, layout, toHistory ) {
+    if ( toHistory !== false ) {
+      this._recordToHistory ( url, layout );
+    }
     this._currentPage = url;
     this._currentLayout = layout;
   }
