@@ -155,9 +155,10 @@ var snavi = {
    * @function
    * @param {Object} data The view data from the backend
    * @param {String} layout The layout being displayed
+   * @param {String} url The URL of the page being navigated to
    * @returns {Boolean} Whether modification is possible or not
    */
-  modify: function ( data, layout ) {
+  modify: function ( data, layout, url ) {
     return false;
   },
 
@@ -196,7 +197,7 @@ var snavi = {
     this.data ( url, layout, _.bind ( function ( url, layout, toHistory, data ) {
       if ( layout === this._currentLayout ) {
         // Already on the right layout, attempt to call modifier
-        if ( this.modify ( data, layout ) ) {
+        if ( this.modify ( data, layout, url ) ) {
           this._finalize ( url, layout, toHistory );
           return;
         }
