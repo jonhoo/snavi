@@ -236,6 +236,16 @@ var snavi = {
     }
     this._currentPage = url;
     this._currentLayout = layout;
+  },
+
+  /**
+   * Returns the URL to the currently loaded page
+   *
+   * @function
+   * @returns {String} URL to the current page
+   */
+  getCurrentUrl: function () {
+    return this._currentPage;
   }
 };
 
