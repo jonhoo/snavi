@@ -19,7 +19,7 @@ NavigationError.prototype.toString = function() {
 };
 
 /**
- * To avoid dependency on _.js, we include bind here
+ * To avoid dependency on _.js, we include bind and equals here
  */
 _ = "_" in window ? _ : {};
 var _ctor = function(){};
@@ -40,7 +40,14 @@ _.bind = "bind" in _ ? _.bind :
     return bound;
   }
 ;
+function g(a,b,d){if(a===b)return 0!==a||1/a==1/b;if(null==a||null==b)return a===b;if(a.a)a=a.b;if(b.a)b=b.b;if("function"===typeof a.isEqual)return a.isEqual(b);if("function"===typeof a.isEqual)return b.isEqual(a);var h=toString.call(a);if(h!=toString.call(b))return!1;switch(h){case "[object String]":return""+a==""+b;case "[object Number]":return a=+a,b=+b,a!=a?b!=b:0==a?1/a==1/b:a==b;case "[object Date]":case "[object Boolean]":return+a==+b;case "[object RegExp]":return a.source==b.source&&a.global==
+b.global&&a.multiline==b.multiline&&a.ignoreCase==b.ignoreCase}if("object"!=typeof a||"object"!=typeof b)return!1;for(var c=d.length;c--;)if(d[c]==a)return!0;d.push(a);var c=0,e=!0;if("[object Array]"==h){if(c=a.length,e=c==b.length)for(;c--&&(e=c in a==c in b&&g(a[c],b[c],d)););}else{if("constructor"in a!="constructor"in b||a.constructor!=b.constructor)return!1;for(var f in a)if(hasOwnProperty.call(a,f)&&(c++,!(e=hasOwnProperty.call(b,f)&&g(a[f],b[f],d))))break;if(e){for(f in b)if(hasOwnProperty.call(b,
+f)&&!c--)break;e=!c}}d.pop();return e}
+_.isEqual = "isEqual" in _ ? _.isEqual : function(a,b) { return g(a,b,[]) };
 
+/**
+ * Unless otherwise noted, all callbacks are given snavi as their context
+ */
 var snavi = {
   /**
    * The current layout
@@ -57,6 +64,37 @@ var snavi = {
   _currentPage: null,
 
   /**
+   * The data for the current page
+   *
+   * Stored to be able to pass it to tweakers
+   * @private
+   * @type Object
+   */
+  _currentDataSet: null,
+
+  /**
+   * The currently active tweak
+   *
+   * @private
+   * @type Object
+   */
+  _currentTweak: {
+    /**
+     * @type String
+     */
+    name: null,
+    /**
+     * @type Object
+     */
+    parameters: {}
+  },
+
+  /**
+   * @private
+   */
+  _tweakHandlers: {},
+
+  /**
    * Popstate handler
    *
    * @private 
@@ -71,7 +109,12 @@ var snavi = {
       return;
     }
 
-    this.navigate ( event.state.url, event.state.layout, false );
+    if ( event.state.url != this._currentPage ) {
+      this.navigate ( event.state.url, event.state.layout, false );
+    }
+    if ( event.state.tweak && !_.isEqual(event.state.tweak, this._currentTweak) ) {
+      this.tweak ( event.state.tweak.name, event.state.tweak.parameters );
+    }
   },
 
   /**
@@ -81,9 +124,10 @@ var snavi = {
    * @function
    * @param {String} url URL that has been navigated to
    * @param {String} layout Layout associated with current page
+   * @param {Object} tweak The currently applied tweak
    */
-  _recordToHistory: function ( url, layout ) {
-    history.pushState ( { url: url, layout: layout }, document.title, url );
+  _recordToHistory: function ( url, layout, tweak ) {
+    history.pushState ( { url: url, layout: layout, tweak: tweak }, document.title, url );
   },
 
   /**
@@ -176,6 +220,32 @@ var snavi = {
   },
 
   /**
+   * Sets a tweak handler that will be notified if a layout
+   * tweak is performed.
+   *
+   * @function 
+   * @param {String} layout The layout to subscribe to tweaks on
+   * @param {String} tweak The tweak to listen for
+   * @param {Function} upCallback 
+   *  Will be called when a tweak is performed
+   *  Called with parameters (from caller), tweak, layout, data and url
+   * @param {Function} [downCallback]
+   *  Will be called when the user navigates away from the tweak
+   *  This can be either a setup, modify or tweak
+   *  Called with tweak, layout, data and url
+   */
+  setTweakHandler ( layout, tweak, upCallback, downCallback ) {
+    if (!(layout in this._tweakHandlers)) {
+      this._tweakHandlers[layout] = {};
+    }
+
+    this._tweakHandlers[layout][tweak] = {
+      'up': upCallback,
+      'down': downCallback
+    };
+  },
+
+  /**
    * Configuration options
    */
   options: {
@@ -195,6 +265,8 @@ var snavi = {
    */
   navigate: function ( url, layout, toHistory ) {
     this.data ( url, layout, _.bind ( function ( url, layout, toHistory, data ) {
+      this._currentDataSet = data;
+
       if ( layout === this._currentLayout ) {
         // Already on the right layout, attempt to call modifier
         if ( this.modify ( data, layout, url ) ) {
@@ -237,6 +309,42 @@ var snavi = {
     }
     this._currentPage = url;
     this._currentLayout = layout;
+  },
+
+  /**
+   * Trigger a tweak operation with the given parameters
+   *
+   * First, the down tweak handler for the current tweak (if any) will be called
+   * Then, the tweak handler associated with the given name will be called (if it exists)
+   * Finally, the state will be updated and stored to history
+   *
+   * If you want to remove any tweaks, pass any false-ish value as the first parameter
+   *
+   * @param {String} tweak The tweak to apply
+   * @param {Object} parameters Parameters to pass to the tweak handler
+   */
+  tweak: function ( tweak, parameters ) {
+    if (this._currentTweak && this._currentLayout in this._tweakHandlers && this._currentTweak.name in this._tweakHandlers[layout] && this._tweakHandlers[this._currentLayout][this._currentTweak.name]['down']) {
+      this._tweakHandlers[this._currentLayout][this._currentTweak.name]['down'].call(this, this._currentTweak.name, this._currentLayout, this._currentDataSet, this._currentPage);
+    }
+
+    this._currentTweak = { name: null, parameters: null };
+
+    if (tweak && this._currentLayout in this._tweakHandlers && tweak in this._tweakHandlers[this._currentLayout] && this._tweakHandlers[this._currentLayout][tweak]['up']) {
+      this._tweakHandlers[this._currentLayout][tweak]['up'].call(this, parameters, tweak, this._currentLayout, this._currentDataSet, this._currentPage);
+      this._currentTweak.name = tweak;
+      this._currentTweak.parameters = parameters;
+    }
+
+    this._recordToHistory ( this._currentPage, this._currentLayout, this._currentTweak );
+  },
+  
+  /**
+   * Returns the data set used to render this page
+   * @returns {Object}
+   */
+  getCurrentDataSet: function() {
+    return this._currentDataSet;
   },
 
   /**
